@@ -1,0 +1,547 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ProductCard } from "@/components/product-card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Search, SlidersHorizontal, Grid3x3, LayoutGrid, RefreshCcw, Loader2 } from "lucide-react"
+import { modelClient, type ExternalModel } from "@/lib/api-clients"
+
+// Fallback products if API fails
+const fallbackProducts: ExternalModel[] = [
+  {
+    id: "1",
+    name: "Articulated Dragon",
+    slug: "articulated-dragon",
+    description: "Fully articulated dragon with moving joints. No supports needed!",
+    price: 0,
+    isFree: true,
+    category: "Figures",
+    thumbnail: "https://images.unsplash.com/photo-1578632292335-df3abbb0d586?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1578632292335-df3abbb0d586",
+    creator: "DragonMaker",
+    downloads: 15420,
+    likes: 2341,
+    featured: true,
+    tags: ["dragon", "articulated"],
+    source: "cults3d",
+    externalUrl: "https://cults3d.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "2",
+    name: "Low Poly Planter Collection",
+    slug: "low-poly-planter-collection",
+    description: "Set of 8 geometric planters for succulents and small plants.",
+    price: 0,
+    isFree: true,
+    category: "Home Decor",
+    thumbnail: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc",
+    creator: "GeometricDesigns",
+    downloads: 8920,
+    likes: 1456,
+    featured: true,
+    tags: ["planter", "geometric"],
+    source: "thingiverse",
+    externalUrl: "https://thingiverse.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "3",
+    name: "Fidget Infinity Cube",
+    slug: "fidget-infinity-cube",
+    description: "Satisfying fidget toy that folds infinitely. Print-in-place design!",
+    price: 0,
+    isFree: true,
+    category: "Toys",
+    thumbnail: "https://images.unsplash.com/photo-1606041011872-596597976b25?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1606041011872-596597976b25",
+    creator: "FidgetLab",
+    downloads: 22150,
+    likes: 3892,
+    featured: true,
+    tags: ["fidget", "toy"],
+    source: "myminifactory",
+    externalUrl: "https://myminifactory.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "4",
+    name: "Cyberpunk Helmet",
+    slug: "cyberpunk-helmet",
+    description: "Futuristic wearable helmet perfect for cosplay.",
+    price: 24.99,
+    isFree: false,
+    category: "Cosplay",
+    thumbnail: "https://images.unsplash.com/photo-1589254065878-42c9da997008?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1589254065878-42c9da997008",
+    creator: "CosplayPro",
+    downloads: 3450,
+    likes: 892,
+    featured: true,
+    tags: ["cyberpunk", "helmet"],
+    source: "myminifactory",
+    externalUrl: "https://myminifactory.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "5",
+    name: "Modular Tool Organizer",
+    slug: "modular-tool-organizer",
+    description: "Customizable organizer system for your workshop or desk.",
+    price: 0,
+    isFree: true,
+    category: "Tools",
+    thumbnail: "https://images.unsplash.com/photo-1580910051074-3eb694886505?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1580910051074-3eb694886505",
+    creator: "WorkshopTools",
+    downloads: 6780,
+    likes: 1023,
+    featured: false,
+    tags: ["organizer", "tools"],
+    source: "thingiverse",
+    externalUrl: "https://thingiverse.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "6",
+    name: "Celtic Knot Coasters",
+    slug: "celtic-knot-coasters",
+    description: "Intricate celtic pattern coasters. Set of 6 unique designs.",
+    price: 0,
+    isFree: true,
+    category: "Home Decor",
+    thumbnail: "https://images.unsplash.com/photo-1533158628620-7e35717d36e8?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1533158628620-7e35717d36e8",
+    creator: "CelticArt",
+    downloads: 4210,
+    likes: 678,
+    featured: false,
+    tags: ["coaster", "celtic"],
+    source: "cults3d",
+    externalUrl: "https://cults3d.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "7",
+    name: "Samurai Armor Set",
+    slug: "samurai-armor-set",
+    description: "Complete wearable samurai armor for cosplay. Life-sized and detailed.",
+    price: 49.99,
+    isFree: false,
+    category: "Cosplay",
+    thumbnail: "https://images.unsplash.com/photo-1613376023733-0a73315d9b06?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1613376023733-0a73315d9b06",
+    creator: "ArmorCraft",
+    downloads: 1890,
+    likes: 567,
+    featured: false,
+    tags: ["samurai", "armor"],
+    source: "myminifactory",
+    externalUrl: "https://myminifactory.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "8",
+    name: "Flexi Rex Dinosaur",
+    slug: "flexi-rex-dinosaur",
+    description: "Flexible T-Rex with articulated joints. Fun and easy to print!",
+    price: 0,
+    isFree: true,
+    category: "Toys",
+    thumbnail: "https://images.unsplash.com/photo-1551708751-7b6e55db5c23?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1551708751-7b6e55db5c23",
+    creator: "DinoToys",
+    downloads: 18900,
+    likes: 4231,
+    featured: false,
+    tags: ["dinosaur", "toy"],
+    source: "thingiverse",
+    externalUrl: "https://thingiverse.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "9",
+    name: "Hexagonal Wall Shelves",
+    slug: "hexagonal-wall-shelves",
+    description: "Modular hexagon shelves that connect together. Create custom wall art!",
+    price: 0,
+    isFree: true,
+    category: "Home Decor",
+    thumbnail: "https://images.unsplash.com/photo-1538688423619-a81d3f23454b?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1538688423619-a81d3f23454b",
+    creator: "ModularDesign",
+    downloads: 9650,
+    likes: 1834,
+    featured: false,
+    tags: ["shelf", "hexagon"],
+    source: "cults3d",
+    externalUrl: "https://cults3d.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "10",
+    name: "Mandalorian Helmet",
+    slug: "mandalorian-helmet",
+    description: "Screen-accurate Mandalorian helmet. Sized for adults with LED mounting.",
+    price: 34.99,
+    isFree: false,
+    category: "Cosplay",
+    thumbnail: "https://images.unsplash.com/photo-1608889476518-738c9b1dcb7e?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1608889476518-738c9b1dcb7e",
+    creator: "StarWarsFan",
+    downloads: 7420,
+    likes: 2103,
+    featured: false,
+    tags: ["mandalorian", "helmet"],
+    source: "myminifactory",
+    externalUrl: "https://myminifactory.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "11",
+    name: "Cable Management Clips",
+    slug: "cable-management-clips",
+    description: "Universal cable organizers for desk and wall mounting. Pack of 20.",
+    price: 0,
+    isFree: true,
+    category: "Tools",
+    thumbnail: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64",
+    creator: "CableOrg",
+    downloads: 31200,
+    likes: 5678,
+    featured: false,
+    tags: ["cable", "organizer"],
+    source: "thingiverse",
+    externalUrl: "https://thingiverse.com",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "12",
+    name: "Planetary Gear Fidget",
+    slug: "planetary-gear-fidget",
+    description: "Mesmerizing planetary gear system. Print-in-place with smooth action.",
+    price: 0,
+    isFree: true,
+    category: "Toys",
+    thumbnail: "https://images.unsplash.com/photo-1620756768662-08c03716f742?w=600&h=600&fit=crop",
+    previewImage: "https://images.unsplash.com/photo-1620756768662-08c03716f742",
+    creator: "GearMaster",
+    downloads: 14580,
+    likes: 2945,
+    featured: false,
+    tags: ["gear", "fidget"],
+    source: "cults3d",
+    externalUrl: "https://cults3d.com",
+    createdAt: new Date().toISOString(),
+  },
+]
+
+export default function ProductsPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [priceFilter, setPriceFilter] = useState("all")
+  const [sortBy, setSortBy] = useState("popular")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [products, setProducts] = useState<ExternalModel[]>(fallbackProducts)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch models from external APIs on mount
+  useEffect(() => {
+    loadModels()
+  }, [])
+
+  const loadModels = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const models = await modelClient.getAllModels(50)
+      if (models.length > 0) {
+        setProducts(models)
+      }
+    } catch (err) {
+      console.error('Failed to load models:', err)
+      setError('Using fallback models (API keys not configured)')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRefresh = () => {
+    loadModels()
+  }
+
+  // Filter products based on search and filters
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = selectedCategory === "all" || 
+                           product.category.toLowerCase() === selectedCategory.toLowerCase()
+    const matchesPrice = priceFilter === "all" ||
+                        (priceFilter === "free" && product.isFree) ||
+                        (priceFilter === "paid" && !product.isFree)
+    
+    return matchesSearch && matchesCategory && matchesPrice
+  })
+
+  // Sort filtered products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case "price-low":
+        return a.price - b.price
+      case "price-high":
+        return b.price - a.price
+      case "downloads":
+        return b.downloads - a.downloads
+      case "newest":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      case "popular":
+      default:
+        return b.downloads - a.downloads
+    }
+  })
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-950 dark:to-black">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-zinc-900 via-black to-zinc-900 text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold">
+              Discover 3D Models
+            </h1>
+            <Button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+              className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+          </div>
+          <p className="text-xl text-zinc-300 mb-4">
+            Browse thousands of high-quality STL files from <span className="font-semibold">Printables.com</span>, <span className="font-semibold">Thangs.com</span> & <span className="font-semibold">Premium Creators</span>
+          </p>
+          {error && (
+            <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 border-zinc-700">
+              ⚠️ {error}
+            </Badge>
+          )}
+          
+          {/* Platform Stats */}
+          <div className="flex gap-6 mt-6">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+              <span className="text-sm text-zinc-400">Printables</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-teal-500"></div>
+              <span className="text-sm text-zinc-400">Thangs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-zinc-500"></div>
+              <span className="text-sm text-zinc-400">Premium</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Filters */}
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6 mb-8 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex flex-col gap-4 lg:flex-row">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Input
+                placeholder="Search models..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-zinc-50 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full lg:w-[200px] bg-zinc-50 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="figures">Figures</SelectItem>
+                <SelectItem value="toys">Toys</SelectItem>
+                <SelectItem value="home decor">Home Decor</SelectItem>
+                <SelectItem value="cosplay">Cosplay</SelectItem>
+                <SelectItem value="tools">Tools</SelectItem>
+                <SelectItem value="miniatures">Miniatures</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Price Filter */}
+            <Select value={priceFilter} onValueChange={setPriceFilter}>
+              <SelectTrigger className="w-full lg:w-[150px] bg-zinc-50 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+                <SelectValue placeholder="Price" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Prices</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Sort */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full lg:w-[180px] bg-zinc-50 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popular">Most Popular</SelectItem>
+                <SelectItem value="downloads">Most Downloads</SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectItem value="newest">Newest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Active Filters */}
+          {(searchQuery || selectedCategory !== "all" || priceFilter !== "all") && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              {searchQuery && (
+                <Badge variant="secondary" className="gap-2 bg-zinc-100 dark:bg-zinc-800">
+                  Search: {searchQuery}
+                  <button onClick={() => setSearchQuery("")} className="hover:text-red-500">×</button>
+                </Badge>
+              )}
+              {selectedCategory !== "all" && (
+                <Badge variant="secondary" className="gap-2 bg-zinc-100 dark:bg-zinc-800">
+                  {selectedCategory}
+                  <button onClick={() => setSelectedCategory("all")} className="hover:text-red-500">×</button>
+                </Badge>
+              )}
+              {priceFilter !== "all" && (
+                <Badge variant="secondary" className="gap-2 bg-zinc-100 dark:bg-zinc-800">
+                  {priceFilter === "free" ? "Free only" : "Paid only"}
+                  <button onClick={() => setPriceFilter("all")} className="hover:text-red-500">×</button>
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("")
+                  setSelectedCategory("all")
+                  setPriceFilter("all")
+                }}
+                className="text-xs text-zinc-600 dark:text-zinc-400"
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Products Grid */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Showing <span className="font-semibold text-black dark:text-white">{sortedProducts.length}</span> of <span className="font-semibold">{products.length}</span> models
+            </p>
+            {products.length > 0 && (
+              <p className="text-xs text-zinc-500 mt-1">
+                From {new Set(products.map(p => p.source)).size} platforms: {Array.from(new Set(products.map(p => p.source))).join(", ")}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className={viewMode === "grid" ? "bg-black hover:bg-zinc-800 text-white" : ""}
+            >
+              <Grid3x3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className={viewMode === "list" ? "bg-black hover:bg-zinc-800 text-white" : ""}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-zinc-100 dark:bg-zinc-900 rounded-lg h-80 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : sortedProducts.length > 0 ? (
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                : "flex flex-col gap-4"
+            }
+          >
+            {sortedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20">
+            <SlidersHorizontal className="mb-4 h-16 w-16 text-zinc-300 dark:text-zinc-700" />
+            <h3 className="text-xl font-semibold mb-2">No models found</h3>
+            <p className="text-zinc-600 dark:text-zinc-400 text-center mb-4">
+              Try adjusting your filters or search term
+            </p>
+            <Button
+              onClick={() => {
+                setSearchQuery("")
+                setSelectedCategory("all")
+                setPriceFilter("all")
+              }}
+              variant="outline"
+            >
+              Clear all filters
+            </Button>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {sortedProducts.length > 0 && (
+          <div className="mt-12 flex justify-center gap-2">
+            <Button variant="outline" disabled className="border-zinc-300 dark:border-zinc-700">Previous</Button>
+            <Button variant="default" className="bg-black hover:bg-zinc-800 text-white">1</Button>
+            <Button variant="outline" className="border-zinc-300 dark:border-zinc-700">2</Button>
+            <Button variant="outline" className="border-zinc-300 dark:border-zinc-700">3</Button>
+            <Button variant="outline" className="border-zinc-300 dark:border-zinc-700">Next</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
