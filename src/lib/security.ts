@@ -137,30 +137,13 @@ export const antiDevToolsScript = `
     }
   });
 
-  // Detect console access
-  const devtoolsDetector = () => {
-    const before = new Date();
-    debugger;
-    const after = new Date();
-    if (after - before > 100) {
-      window.location.href = '/';
-    }
-  };
-
-  setInterval(devtoolsDetector, 1000);
-
   // Disable text selection for sensitive content
   document.addEventListener('selectstart', (e) => {
-    if (e.target.hasAttribute('data-protected')) {
+    if (e.target?.hasAttribute('data-protected')) {
       e.preventDefault();
       return false;
     }
   });
-
-  // Clear console periodically
-  setInterval(() => {
-    console.clear();
-  }, 2000);
 })();
 </script>
 `
